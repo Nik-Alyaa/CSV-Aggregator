@@ -140,21 +140,13 @@ export default function Home() {
                     <table className="min-w-full">
                       <thead>
                         <tr className="bg-green-100 text-green-900">
-                          <th className="p-4 text-left font-semibold">
-                            Email
-                          </th>
-
-                          <th className="p-4 text-left font-semibold">
-                            First Name
-                          </th>
-
-                          <th className="p-4 text-left font-semibold">
-                            Mobile
-                          </th>
-
-                          <th className="p-4 text-left font-semibold">
-                            Total Voucher
-                          </th>
+                          <th className="p-4 text-left">Email</th>
+                          <th className="p-4 text-left">First Name</th>
+                          <th className="p-4 text-left">Mobile</th>
+                          <th className="p-4 text-left">Voucher Names</th>
+                          <th className="p-4 text-left">Voucher Codes</th>
+                          <th className="p-4 text-left">Expiry</th>
+                          <th className="p-4 text-left">Total Voucher</th>
                         </tr>
                       </thead>
 
@@ -181,7 +173,20 @@ export default function Home() {
                             </td>
 
                             <td className="p-4 font-medium text-green-900">
+                              {row.ItemListHTML}
+                            </td>
+
+                            <td className="p-4 font-medium text-green-900">
+                              {row.VoucherCodeListHTML}
+                            </td>
+
+                            <td className="p-4 font-medium text-green-900">
+                              {row.ExpiryDate}
+                            </td>
+
+                            <td className="p-4 font-medium text-green-900">
                               {row.TotalVoucher}
+
                             </td>
                           </tr>
                         ))}

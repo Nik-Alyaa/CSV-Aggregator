@@ -28,23 +28,38 @@ export function processCsv(rows: any[]): OutputRow[] {
   return Array.from(emailGroups.values()).map((group) => {
     const first = group[0];
 
-    const comboMap = new Map<string, {
-      product: string;
-      code: string;
-      qty: number;
-    }>();
+    const comboMap = new Map<
+      string,
+      {
+        product: string;
+        codes: string[];
+        qty: number;
+      }
+    >();
+
+    console.log(Object.keys(rows[0]));
+    console.log(first["Actual Voucher Expiry"]);
 
     group.forEach((row) => {
-      const product = row.Product_Name?.trim() || "";
-      const code = row.Voucher_Code?.trim() || "";
-      const key = `${product}||${code}`;
+      const product = String(row.Product_Name ?? "").trim();
+      const code = String(row["Voucher Code"] ?? "").trim();
       const qty = Number(row.Quantity || 1);
 
-      if (!comboMap.has(key)) {
-        comboMap.set(key, { product, code, qty: 0 });
+      if (!comboMap.has(product)) {
+        comboMap.set(product, {
+          product,
+          codes: [],
+          qty: 0,
+        });
       }
 
-      comboMap.get(key)!.qty += qty;
+      const item = comboMap.get(product)!;
+
+      item.qty += qty;
+
+      if (code) {
+        item.codes.push(code);
+      }
     });
 
     const combos = Array.from(comboMap.values());
@@ -58,22 +73,26 @@ export function processCsv(rows: any[]): OutputRow[] {
       .join("<br><br>");
 
     const voucherCodeListHTML = combos
-      .map((c) => c.code)
+      .map((c) => c.codes.join("; "))
       .join("<br><br>");
 
     const voucherListCombined = combos
-      .map((c) => `${c.product} – ${c.code}`)
+      .flatMap((c) =>
+        c.codes.map(
+          (code) => `${c.product} – ${code}`
+        )
+      )
       .join("; ");
 
     return {
-      Email: first.Email,
-      MobileNumber: first.Mobile_Number,
-      FirstName: first.Contact_Name,
+      Email: first["Email"],
+      MobileNumber: first["Mobile_Number"],
+      FirstName: first["Contact_Name"],
       ItemListHTML: itemListHTML,
       QuantityListHTML: quantityListHTML,
       VoucherCodeListHTML: voucherCodeListHTML,
       VoucherListCombined: voucherListCombined,
-      ExpiryDate: first.Actual_Voucher_Expiry,
+      ExpiryDate: first["Actual Voucher Expiry"],
       TotalVoucher: combos.length,
     };
   });
