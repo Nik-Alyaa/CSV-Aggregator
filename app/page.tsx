@@ -1,65 +1,203 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import Papa from "papaparse";
+import { processCsv } from "../app/utils/processCsv";
 
 export default function Home() {
+  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [outputData, setOutputData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const handleUpload = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    setLoading(true);
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const transformed = processCsv(
+          results.data as any[]
+        );
+
+        setOutputData(transformed);
+        setPreviewData(transformed.slice(0, 20));
+        setLoading(false);
+      },
+      error: () => {
+        alert("Failed to read CSV");
+        setLoading(false);
+      },
+    });
+  };
+
+  const downloadCsv = () => {
+    if (!outputData.length) return;
+
+    const csv = Papa.unparse(outputData);
+
+    const blob = new Blob([csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "filtered_vouchers.csv";
+    link.click();
+
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="min-h-screen bg-green-50 p-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="overflow-hidden rounded-2xl border border-green-200 bg-white shadow-xl">
+          
+          {/* Header */}
+          <div className="bg-green-700 px-8 py-6 text-white">
+            <h1 className="text-4xl font-bold">
+              ABB Voucher Consolidator
+            </h1>
+
+            <p className="mt-2 text-green-100">
+              Upload CSV → Consolidate Records →
+              Download Result
+            </p>
+          </div>
+
+          <div className="p-8">
+
+            {/* Upload Section */}
+            <div className="rounded-xl border-2 border-dashed border-green-300 bg-green-50 p-8">
+              <label className="block cursor-pointer">
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-green-800">
+                    Upload CSV File
+                  </p>
+
+                  <p className="mt-2 text-sm text-green-600">
+                    Select your voucher export file
+                  </p>
+                </div>
+
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleUpload}
+                  className="mt-4 block w-full rounded-lg border border-green-300 bg-white p-3"
+                />
+              </label>
+            </div>
+
+            {loading && (
+              <div className="mt-6 rounded-lg bg-green-100 p-4">
+                <p className="font-medium text-green-800">
+                  Processing CSV...
+                </p>
+              </div>
+            )}
+
+            {!!outputData.length && (
+              <>
+                {/* Stats */}
+                <div className="mt-8 flex flex-wrap items-center gap-4">
+
+                  <div className="rounded-lg border border-green-300 bg-green-100 px-5 py-3">
+                    <div className="text-xs uppercase text-green-700">
+                      Total Emails
+                    </div>
+
+                    <div className="text-2xl font-bold text-green-900">
+                      {outputData.length}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={downloadCsv}
+                    className="rounded-lg bg-green-700 px-6 py-3 font-semibold text-white transition hover:bg-green-800"
+                  >
+                    Generate & Download CSV
+                  </button>
+                </div>
+
+                {/* Preview Table */}
+                <div className="mt-8 overflow-hidden rounded-xl border border-green-200 shadow-sm">
+                  <div className="bg-green-700 px-4 py-3 text-white">
+                    <h2 className="font-semibold">
+                      Preview Results
+                    </h2>
+                  </div>
+
+                  <div className="overflow-auto">
+                    <table className="min-w-full">
+                      <thead>
+                        <tr className="bg-green-100 text-green-900">
+                          <th className="p-4 text-left font-semibold">
+                            Email
+                          </th>
+
+                          <th className="p-4 text-left font-semibold">
+                            First Name
+                          </th>
+
+                          <th className="p-4 text-left font-semibold">
+                            Mobile
+                          </th>
+
+                          <th className="p-4 text-left font-semibold">
+                            Total Voucher
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {previewData.map((row, index) => (
+                          <tr
+                            key={index}
+                            className={`border-t border-green-100 ${
+                              index % 2 === 0
+                                ? "bg-white"
+                                : "bg-green-50"
+                            }`}
+                          >
+                            <td className="p-4 text-green-900">
+                              {row.Email}
+                            </td>
+
+                            <td className="p-4 text-green-900">
+                              {row.FirstName}
+                            </td>
+
+                            <td className="p-4 text-green-900">
+                              {row.MobileNumber}
+                            </td>
+
+                            <td className="p-4 font-medium text-green-900">
+                              {row.TotalVoucher}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <p className="mt-4 text-sm text-green-700">
+                  Showing first 20 records
+                </p>
+              </>
+            )}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
